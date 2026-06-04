@@ -31,12 +31,14 @@ jobs:
       - name: Build Frontend
         run: npm run build
 
-      - name: Install Android SDK via command line
+      - name: Install Android SDK and NDK manually
         run: |
-          sudo apt-get update
-          sudo apt-get install -y android-sdk
-          # تثبيت حزم إضافية لضمان عمل Tauri
-          sudo apt-get install -y default-jdk
+          # تحميل NDK و SDK يدوياً
+          wget https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
+          unzip android-ndk-r25c-linux.zip
+          export ANDROID_NDK_HOME=$PWD/android-ndk-r25c
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+          echo "NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
           rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 
       - name: Build Android APK
@@ -45,12 +47,12 @@ jobs:
           mkdir -p src-tauri
           echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
           
-          # محاولة البناء مباشرة
+          # البناء
           tauri android init
           tauri android build --release
         env:
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64 # نستخدم جافا 11 المتاحة في أوبونتو
-          ANDROID_HOME: /usr/lib/android-sdk
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
