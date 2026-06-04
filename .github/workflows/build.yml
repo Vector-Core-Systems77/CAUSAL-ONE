@@ -18,35 +18,61 @@ jobs:
 
       - name: Create Project Files
         run: |
-          mkdir -p src src-tauri/src
-          echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build"},"devDependencies":{"typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
-          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
-          echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
-          echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
-          echo '{"productName": "causalone", "version": "0.1.0", "identifier": "com.causal.one", "build": {"frontendDist": "../dist"}, "bundle": {"active": true, "targets": ["app"]}}' > src-tauri/tauri.conf.json
-          echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
-          echo '[package]
+          mkdir -p src src-tauri/src src-tauri/icons
+          touch src-tauri/icons/icon.png
+          
+          cat <<EOF > package.json
+          {
+            "name": "causal-one",
+            "version": "0.1.0",
+            "scripts": { "build": "vite build" },
+            "devDependencies": { "typescript": "^5.5.3", "vite": "^5.4.2", "@vitejs/plugin-react": "^4.3.1" },
+            "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" }
+          }
+          EOF
+
+          cat <<EOF > src-tauri/tauri.conf.json
+          {
+            "productName": "causalone",
+            "version": "0.1.0",
+            "identifier": "com.causal.one",
+            "build": { "frontendDist": "../dist" },
+            "bundle": { "active": true, "targets": ["app"], "icon": [] }
+          }
+          EOF
+
+          cat <<EOF > src-tauri/Cargo.toml
+          [package]
           name = "causal-one"
           version = "0.1.0"
           edition = "2021"
           [build-dependencies]
-          tauri-build = { version = "2.0.0-rc", features = [] }
+          tauri-build = { version = "2.0.0-rc" }
           [dependencies]
-          tauri = { version = "2.0.0-rc", features = [] }
+          tauri = { version = "2.0.0-rc" }
           serde = { version = "1.0", features = ["derive"] }
           serde_json = "1.0"
           [lib]
           name = "causal_one_lib"
-          path = "src/lib.rs"' > src-tauri/Cargo.toml
-          echo '#[tauri::command]
+          path = "src/lib.rs"
+          EOF
+
+          cat <<EOF > src-tauri/src/lib.rs
+          #[tauri::command]
           fn greet(name: &str) -> String { format!("Hello, {}!", name) }
           pub fn run() {
-          tauri::Builder::default()
-          .invoke_handler(tauri::generate_handler![greet])
-          .run(tauri::generate_context!())
-          .expect("error while running tauri application");
-          }' > src-tauri/src/lib.rs
+            tauri::Builder::default()
+              .invoke_handler(tauri::generate_handler![greet])
+              .run(tauri::generate_context!())
+              .expect("error while running tauri application");
+          }
+          EOF
+
+          echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
+          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
+          echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
+          echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
+          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
 
       - name: Setup Rust & Android NDK
         run: |
