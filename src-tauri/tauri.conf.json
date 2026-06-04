@@ -1,13 +1,12 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "productName": "causal-one",
   "version": "0.1.0",
   "identifier": "com.causal.one.app",
   "build": {
+    "frontendDist": "../dist",
     "beforeDevCommand": "",
-    "beforeBuildCommand": "",
-    "devPath": "http://localhost:1420",
-    "frontendDist": "../dist"
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [
@@ -23,8 +22,6 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": [],
-    "identifier": "com.causal.one.app"
+    "targets": "all"
   }
 }
