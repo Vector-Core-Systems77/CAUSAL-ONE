@@ -1,4 +1,4 @@
-name: Build CAUSAL-ONE
+name: Build Android APK
 
 on:
   push:
@@ -7,8 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,34 +16,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Create Valid Icons
+      # تثبيت بيئة أندرويد المطلوبة
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Rust target for Android
         run: |
-          mkdir -p src-tauri/icons
-          echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" | base64 -d > src-tauri/icons/icon.png
-          cp src-tauri/icons/icon.png src-tauri/icons/32x32.png
-          cp src-tauri/icons/icon.png src-tauri/icons/128x128.png
-          cp src-tauri/icons/icon.png src-tauri/icons/128x128@2x.png
-          touch src-tauri/icons/icon.ico
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 
       - name: Setup Project Environment
         run: |
           echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build","tauri":"tauri"},"devDependencies":{"@tauri-apps/cli":"2.1.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1","@tauri-apps/api":"2.1.0"}}' > package.json
-          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
-          echo 'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
-          echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": true, "targets": ["deb", "rpm"]}}' > src-tauri/tauri.conf.json
-
-      - name: Fix Source Code
-        run: |
-          echo 'fn main() { causal_one::run(); }' > src-tauri/src/main.rs
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Ubuntu Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+          echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "bundle": {"active": true, "targets": ["app"]}}' > src-tauri/tauri.conf.json
 
       - name: Install Dependencies
         run: npm install
@@ -53,37 +35,18 @@ jobs:
       - name: Build Frontend
         run: npx vite build
 
-      - name: Fix Cargo Structure
+      - name: Build Android APK
         run: |
-          echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
-          echo '[package]
-          name = "causal-one"
-          version = "0.1.0"
-          edition = "2021"
-          build = "build.rs"
-
-          [lib]
-          path = "src/lib.rs"
-
-          [[bin]]
-          name = "causal-one"
-          path = "src/main.rs"
-
-          [dependencies]
-          tauri = "2.1.0"
-          serde = { version = "1.0", features = ["derive"] }
-          serde_json = "1.0"
-
-          [build-dependencies]
-          tauri-build = "2.1.0"' > src-tauri/Cargo.toml
-
-      - name: Build Project
-        run: npx tauri build --config src-tauri/tauri.conf.json
+          # نستخدم tauri mobile للبناء
+          npm install -g @tauri-apps/cli
+          tauri android init
+          tauri android build --release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_HOME: ${{ steps.setup-android.outputs.android-sdk-path }}
 
-      - name: Upload Artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Causal-One-Bundle
-          path: src-tauri/target/release/bundle/
+          name: Causal-One-APK
+          path: src-tauri/gen/android/app/build/outputs/apk/release/
