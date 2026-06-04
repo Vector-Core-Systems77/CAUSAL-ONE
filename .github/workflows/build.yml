@@ -16,20 +16,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup Project Environment
+      - name: Prepare Project Files
         run: |
-          # تثبيت الحزم المطلوبة
-          npm install
-          
-          # إنشاء الملفات الأساسية المفقودة لمنع أخطاء Vite
+          # 1. إنشاء الملفات أولاً
           mkdir -p src
           echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
           echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          
-          # إعدادات بسيطة
           echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build"},"devDependencies":{"typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
+
+      - name: Install Dependencies
+        run: npm install
 
       - name: Build Frontend
         run: npm run build
@@ -44,7 +42,6 @@ jobs:
       - name: Build Android APK
         run: |
           npm install -g @tauri-apps/cli
-          # توري يحتاج إعدادات أولية
           mkdir -p src-tauri
           echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
           tauri android init
