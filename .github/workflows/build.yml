@@ -1,0 +1,41 @@
+name: Build CAUSAL-ONE
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      # تثبيت الأدوات الضرورية للبناء على Linux
+      - name: Install Ubuntu Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+
+      - name: Install NPM dependencies
+        run: npm install
+
+      # البناء باستخدام الإعدادات التي أضفناها للمشروع
+      - name: Build project
+        run: npx tauri build --config src-tauri/tauri.conf.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Causal-One-Bundle
+          path: src-tauri/target/release/bundle/
