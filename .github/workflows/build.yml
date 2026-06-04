@@ -10,18 +10,65 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK and NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 ndk;25.2.9519653'
+          accept-licenses: true
+
+      - name: Setup Rust
+        run: |
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+          cargo install tauri-cli@2.0.0 --locked
+
+      - name: Set environment variables
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
+
       - name: Create Project Files
         run: |
-          mkdir -p src src-tauri/src src-tauri/icons
-          echo "dummy" > src-tauri/icons/icon.png
+          mkdir -p src src-tauri/src
+          cat <<EOF > index.html
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="UTF-8"><title>Causal One</title></head>
+          <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
+          </html>
+          EOF
+          cat <<EOF > tsconfig.json
+          {
+            "compilerOptions": {
+              "target": "ES2020",
+              "lib": ["DOM", "DOM.Iterable", "ESNext"],
+              "module": "ESNext",
+              "skipLibCheck": true,
+              "moduleResolution": "bundler",
+              "allowImportingTsExtensions": true,
+              "resolveJsonModule": true,
+              "isolatedModules": true,
+              "noEmit": true,
+              "jsx": "react-jsx",
+              "strict": true
+            },
+            "include": ["src"]
+          }
+          EOF
           cat <<EOF > package.json
           {
-          "name": "causal-one",
-          "version": "0.1.0",
+          "name": "causal-one", "version": "0.1.0",
           "scripts": { "build": "vite build" },
           "devDependencies": { "typescript": "^5.5.3", "vite": "^5.4.2", "@vitejs/plugin-react": "^4.3.1" },
           "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" }
@@ -29,11 +76,10 @@ jobs:
           EOF
           cat <<EOF > src-tauri/tauri.conf.json
           {
-          "productName": "causalone",
-          "version": "0.1.0",
-          "identifier": "com.causal.one",
+          "productName": "causalone", "version": "0.1.0",
+          "app": { "windows": [{ "title": "causalone", "width": 800, "height": 600 }] },
           "build": { "frontendDist": "../dist" },
-          "bundle": { "active": true, "targets": ["app"], "icon": [] }
+          "bundle": { "identifier": "com.causal.one", "active": true, "targets": ["app"] }
           }
           EOF
           cat <<EOF > src-tauri/Cargo.toml
@@ -42,44 +88,45 @@ jobs:
           version = "0.1.0"
           edition = "2021"
           [build-dependencies]
-          tauri-build = { version = "2.0.0-rc" }
+          tauri-build = { version = "2.0.0" }
           [dependencies]
-          tauri = { version = "2.0.0-rc" }
+          tauri = { version = "2.0.0" }
           serde = { version = "1.0", features = ["derive"] }
           serde_json = "1.0"
           [lib]
           name = "causal_one_lib"
           path = "src/lib.rs"
           EOF
-          cat <<EOF > src-tauri/src/lib.rs
-          #[tauri::command]
-          fn greet(name: &str) -> String { format!("Hello, {}!", name) }
-          pub fn run() {
-          tauri::Builder::default()
-          .invoke_handler(tauri::generate_handler![greet])
-          .run(tauri::generate_context!())
-          .expect("error while running tauri application");
+          cat <<EOF > src/main.tsx
+          import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App";
+          const rootElement = document.getElementById("root");
+          if (rootElement) {
+            ReactDOM.createRoot(rootElement).render(<React.StrictMode><App /></React.StrictMode>);
           }
           EOF
-          echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
-          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
-          echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
+          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
-      - name: Setup Rust & Android NDK
-        run: |
-          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-          npm install -g @tauri-apps/cli
+          echo '#[tauri::command]
+          fn greet(name: &str) -> String { format!("Hello, {}!", name) }
+          pub fn run() {
+            tauri::Builder::default()
+              .invoke_handler(tauri::generate_handler![greet])
+              .run(tauri::generate_context!())
+              .expect("error while running tauri application");
+          }' > src-tauri/src/lib.rs
+          echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
+
       - name: Build and Package
         run: |
           npm install
           npm run build
-          tauri android init
-          tauri android build
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          rm -rf src-tauri/gen || true
+          cargo tauri android init
+          cargo tauri android build --apk --universal
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Causal-One-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/debug/
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/debug/*.apk
