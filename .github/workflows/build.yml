@@ -1,54 +1,40 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Create Project Files
         run: |
-          # إنشاء المجلدات
-          mkdir -p src src-tauri
+          mkdir -p src src-tauri/src
           
-          # إنشاء package.json أولاً وقبل كل شيء
+          # ملفات المشروع
           echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build"},"devDependencies":{"typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
-          
-          # إنشاء باقي الملفات
           echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
           echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
           
-          # إنشاء ملف tauri الأساسي
+          # ملفات Tauri و Rust
           echo '{"productName": "causalone", "version": "0.1.0", "identifier": "com.causal.one", "build": {"frontendDist": "../dist"}, "bundle": {"active": true, "targets": ["app"]}}' > src-tauri/tauri.conf.json
+          
+          # إنشاء Cargo.toml - بدون أي مسافات في بداية الأسطر
+          echo '[package]
+          name = "causal-one"
+          version = "0.1.0"
+          edition = "2021"
 
-      - name: Setup Rust & Android NDK
-        run: |
-          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-          npm install -g @tauri-apps/cli
+          [dependencies]
+          tauri = { version = "2.0.0-rc", features = [] }
+          serde = { version = "1.0", features = ["derive"] }
+          serde_json = "1.0"
 
-      - name: Install Dependencies and Build
-        run: |
-          npm install
-          npm run build
-          tauri android init
-          tauri android build
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Causal-One-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/debug/
+          [lib]
+          name = "causal_one_lib"
+          path = "src/lib.rs"' | sed 's/^[ \t]*//' > src-tauri/Cargo.toml
+          
+          # إنشاء مكتبة Rust - بدون أي مسافات في بداية الأسطر
+          echo '#[tauri::command]
+          fn greet(name: &str) -> String { format!("Hello, {}!", name) }
+          
+          #[cfg_attr(mobile, tauri::mobile_entry_point)]
+          pub fn run() {
+          tauri::Builder::default()
+          .invoke_handler(tauri::generate_handler![greet])
+          .run(tauri::generate_context!())
+          .expect("error while running tauri application");
+          }' | sed 's/^[ \t]*//' > src-tauri/src/lib.rs
