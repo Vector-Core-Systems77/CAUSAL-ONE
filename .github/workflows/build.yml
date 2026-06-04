@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # تفعيل معايير Node.js الجديدة
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
           echo 'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": true}}' > src-tauri/tauri.conf.json
+          echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": true, "targets": ["deb", "rpm"]}}' > src-tauri/tauri.conf.json
 
       - name: Fix Source Code
         run: |
@@ -86,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Causal-One-Bundle
-          path: src-tauri/target/release/
+          path: src-tauri/target/release/bundle/
