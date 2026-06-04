@@ -19,7 +19,6 @@ jobs:
       - name: Create Valid Icons
         run: |
           mkdir -p src-tauri/icons
-          # إنشاء صورة PNG حقيقية لمنع خطأ "unexpected end of file"
           echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" | base64 -d > src-tauri/icons/icon.png
           cp src-tauri/icons/icon.png src-tauri/icons/32x32.png
           cp src-tauri/icons/icon.png src-tauri/icons/128x128.png
@@ -33,6 +32,11 @@ jobs:
           echo 'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
           echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": false}}' > src-tauri/tauri.conf.json
+
+      # تصحيح ملف src/main.rs برمجياً ليستخدم الاسم الصحيح
+      - name: Fix Source Code
+        run: |
+          echo 'fn main() { causal_one::run(); }' > src-tauri/src/main.rs
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
