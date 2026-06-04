@@ -16,32 +16,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare Project Files
-        run: |
-          mkdir -p src
-          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
-          echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
-          echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build"},"devDependencies":{"typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
-          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Frontend
-        run: npm run build
-
-      - name: Setup Android NDK
+      - name: Setup Rust & Android NDK
         run: |
           rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-
-      - name: Build Android APK
-        run: |
           npm install -g @tauri-apps/cli
-          mkdir -p src-tauri
-          echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
+
+      - name: Build Project
+        run: |
+          # 1. تثبيت الحزم
+          npm install
           
-          # إزالة الخيارات الإضافية لمنع تكرار --release
+          # 2. إنشاء الهيكلية الأساسية التي يتوقعها Tauri
+          mkdir -p src-tauri
+          
+          # 3. إنشاء ملف توري الأساسي
+          echo '{"productName": "causalone", "version": "0.1.0", "identifier": "com.causal.one", "build": {"frontendDist": "../dist"}, "bundle": {"active": true, "targets": ["app"]}}' > src-tauri/tauri.conf.json
+          
+          # 4. بناء الويب
+          npm run build
+          
+          # 5. تهيئة أندرويد والبناء
           tauri android init
           tauri android build
         env:
