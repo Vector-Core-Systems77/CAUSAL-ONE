@@ -16,9 +16,10 @@ jobs:
         with:
           node-version: 20
 
+      # 1. إنشاء/إصلاح ملفات المشروع الأساسية
       - name: Setup Project Environment
         run: |
-          echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build","tauri":"tauri"},"devDependencies":{"@tauri-apps/cli":"^2.0.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1","@tauri-apps/api":"^2.0.0"}}' > package.json
+          echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build","tauri":"tauri"},"devDependencies":{"@tauri-apps/cli":"^2.0.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1","@tauri-apps/api":"^2.1.0"}}' > package.json
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
           echo 'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
@@ -37,7 +38,7 @@ jobs:
       - name: Build Frontend
         run: npx vite build
 
-      # هذا هو التعديل الجوهري لـ Cargo.toml
+      # 2. إنشاء Cargo.toml متوافق مع إصدار 2.1.0
       - name: Fix Cargo Structure
         run: |
           echo '[package]
@@ -53,10 +54,14 @@ jobs:
           path = "src/main.rs"
 
           [dependencies]
-          tauri = { version = "2.0.0-rc", features = [] }
+          tauri = "2.1.0"
           serde = { version = "1.0", features = ["derive"] }
-          serde_json = "1.0"' > src-tauri/Cargo.toml
+          serde_json = "1.0"
 
+          [build-dependencies]
+          tauri-build = "2.1.0"' > src-tauri/Cargo.toml
+
+      # 3. بناء المشروع النهائي
       - name: Build Project
         run: npx tauri build --config src-tauri/tauri.conf.json
         env:
