@@ -12,9 +12,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: setup-node@v4
         with:
           node-version: 20
+
+      # إنشاء المجلدات المفقودة التي يبحث عنها كود Rust الخاص بك
+      - name: Create Fake Icons
+        run: |
+          mkdir -p src-tauri/icons
+          touch src-tauri/icons/icon.png
+          touch src-tauri/icons/32x32.png
+          touch src-tauri/icons/128x128.png
+          touch src-tauri/icons/128x128@2x.png
+          touch src-tauri/icons/icon.ico
 
       - name: Setup Project Environment
         run: |
@@ -22,7 +32,6 @@ jobs:
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
           echo 'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          # ملف إعدادات بدون أي أيقونات وبدون أي إشارات لملفات خارجية
           echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": false}}' > src-tauri/tauri.conf.json
 
       - name: Install Rust stable
@@ -63,11 +72,8 @@ jobs:
           [build-dependencies]
           tauri-build = "2.1.0"' > src-tauri/Cargo.toml
 
-      # تنظيف مجلد target قبل البناء لإجبار Rust على إعادة قراءة الإعدادات الجديدة
-      - name: Clean and Build
-        run: |
-          cd src-tauri && cargo clean && cd ..
-          npx tauri build --config src-tauri/tauri.conf.json
+      - name: Build Project
+        run: npx tauri build --config src-tauri/tauri.conf.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
