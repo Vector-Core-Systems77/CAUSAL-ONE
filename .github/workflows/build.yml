@@ -1,4 +1,4 @@
-name: Build CAUSAL-ONE
+name: Build CAUSAL-ONE-AUTO
 
 on:
   push:
@@ -11,20 +11,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies (Ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install Node dependencies
+      # هذا الجزء يقوم بإنشاء الملفات المفقودة ذاتياً
+      - name: Generate Missing Files
+        run: |
+          echo '{"name":"causal-one","version":"0.1.0","private":true,"scripts":{"build":"vite build"},"dependencies":{"@tauri-apps/api":"^2.0.0","react":"^18.3.1","react-dom":"^18.3.1"},"devDependencies":{"@tauri-apps/cli":"^2.0.0","@vitejs/plugin-react":"^4.3.1","typescript":"^5.5.3","vite":"^5.4.2"}}' > package.json
+          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()]});' > vite.config.ts
+          echo '{"compilerOptions":{"target":"ES2020","jsx":"react-jsx","module":"ESNext","moduleResolution":"bundler"}}' > tsconfig.json
+          mkdir -p src
+          echo '<!doctype html><html><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>' > index.html
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
         run: npm install
 
       - name: Build project
@@ -36,5 +40,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Causal-One-Bundle
-          path: |
-            src-tauri/target/release/bundle/
+          path: src-tauri/target/release/bundle/
