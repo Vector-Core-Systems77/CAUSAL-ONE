@@ -22,8 +22,8 @@ jobs:
           echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
           echo 'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          # إنشاء إعدادات توري بدون أيقونات لتجنب الخطأ
-          echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist", "beforeDevCommand": "", "beforeBuildCommand": ""}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": true, "targets": "all", "icon": []}}' > src-tauri/tauri.conf.json
+          # ملف إعدادات بدون أي أيقونات وبدون أي إشارات لملفات خارجية
+          echo '{"$schema": "../node_modules/@tauri-apps/cli/schema.json", "productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}, "app": {"windows": [{"title": "CAUSAL-ONE", "width": 800, "height": 600}], "security": {"csp": null}}, "bundle": {"active": false}}' > src-tauri/tauri.conf.json
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -63,8 +63,11 @@ jobs:
           [build-dependencies]
           tauri-build = "2.1.0"' > src-tauri/Cargo.toml
 
-      - name: Build Project
-        run: npx tauri build --config src-tauri/tauri.conf.json
+      # تنظيف مجلد target قبل البناء لإجبار Rust على إعادة قراءة الإعدادات الجديدة
+      - name: Clean and Build
+        run: |
+          cd src-tauri && cargo clean && cd ..
+          npx tauri build --config src-tauri/tauri.conf.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
