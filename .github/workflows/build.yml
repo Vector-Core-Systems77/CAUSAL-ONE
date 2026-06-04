@@ -31,17 +31,12 @@ jobs:
       - name: Build Frontend
         run: npm run build
 
-      - name: Setup Android SDK and NDK
+      - name: Install Android SDK via command line
         run: |
-          # تثبيت الحزم المطلوبة يدوياً لضمان توفرها
-          mkdir -p $HOME/android-sdk
-          export ANDROID_HOME=$HOME/android-sdk
-          echo "y" | $ANDROID_HOME/tools/bin/sdkmanager "platform-tools" "platforms;android-33" "ndk;25.1.8937393"
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "NDK_HOME=$ANDROID_HOME/ndk/25.1.8937393" >> $GITHUB_ENV
-
-      - name: Install Rust target for Android
-        run: |
+          sudo apt-get update
+          sudo apt-get install -y android-sdk
+          # تثبيت حزم إضافية لضمان عمل Tauri
+          sudo apt-get install -y default-jdk
           rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 
       - name: Build Android APK
@@ -50,11 +45,12 @@ jobs:
           mkdir -p src-tauri
           echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
           
-          # البناء
+          # محاولة البناء مباشرة
           tauri android init
           tauri android build --release
         env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64 # نستخدم جافا 11 المتاحة في أوبونتو
+          ANDROID_HOME: /usr/lib/android-sdk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
