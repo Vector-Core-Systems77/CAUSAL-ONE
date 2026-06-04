@@ -1,4 +1,4 @@
-name: Build CAUSAL-ONE-AUTO
+name: Build CAUSAL-ONE
 
 on:
   push:
@@ -11,28 +11,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # الخطوة الحاسمة: إنشاء الملف المفقود برمجياً
+      - name: Create missing package.json
+        run: |
+          echo '{
+            "name": "causal-one",
+            "version": "0.1.0",
+            "scripts": {
+              "tauri": "tauri"
+            },
+            "devDependencies": {
+              "@tauri-apps/cli": "^2.0.0"
+            }
+          }' > package.json
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # هذا الجزء يقوم بإنشاء الملفات المفقودة ذاتياً
-      - name: Generate Missing Files
-        run: |
-          echo '{"name":"causal-one","version":"0.1.0","private":true,"scripts":{"build":"vite build"},"dependencies":{"@tauri-apps/api":"^2.0.0","react":"^18.3.1","react-dom":"^18.3.1"},"devDependencies":{"@tauri-apps/cli":"^2.0.0","@vitejs/plugin-react":"^4.3.1","typescript":"^5.5.3","vite":"^5.4.2"}}' > package.json
-          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()]});' > vite.config.ts
-          echo '{"compilerOptions":{"target":"ES2020","jsx":"react-jsx","module":"ESNext","moduleResolution":"bundler"}}' > tsconfig.json
-          mkdir -p src
-          echo '<!doctype html><html><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>' > index.html
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
         run: npm install
 
+      # تشغيل tauri باستخدام npx لتجاوز أي مشاكل في السكربتات
       - name: Build project
-        run: npm run tauri build
+        run: npx tauri build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
