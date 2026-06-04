@@ -39,11 +39,11 @@ jobs:
         run: |
           npm install -g @tauri-apps/cli
           mkdir -p src-tauri
-          echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
+          echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
           
-          # البناء مع وضع -- للفصل بين الأوامر
+          # إزالة الخيارات الإضافية لمنع تكرار --release
           tauri android init
-          tauri android build -- --release
+          tauri android build
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
@@ -51,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Causal-One-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/release/
+          path: src-tauri/gen/android/app/build/outputs/apk/debug/
