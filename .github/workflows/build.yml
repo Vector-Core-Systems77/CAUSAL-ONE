@@ -18,7 +18,6 @@ jobs:
 
       - name: Prepare Project Files
         run: |
-          # 1. إنشاء الملفات أولاً
           mkdir -p src
           echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
           echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
@@ -34,6 +33,7 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        id: android
 
       - name: Install Rust target for Android
         run: |
@@ -44,11 +44,16 @@ jobs:
           npm install -g @tauri-apps/cli
           mkdir -p src-tauri
           echo '{"productName": "causal-one", "version": "0.1.0", "identifier": "com.causal.one.app", "build": {"frontendDist": "../dist"}}' > src-tauri/tauri.conf.json
+          
+          # إعداد البيئة يدوياً لضمان رؤية Tauri للـ SDK
+          export ANDROID_HOME=${{ steps.android.outputs.android-sdk-path }}
+          export NDK_HOME=$ANDROID_HOME/ndk-bundle
+          
           tauri android init
           tauri android build --release
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-          ANDROID_HOME: ${{ steps.setup-android.outputs.android-sdk-path }}
+          ANDROID_HOME: ${{ steps.android.outputs.android-sdk-path }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
