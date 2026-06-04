@@ -11,6 +11,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # خطوة "الطوارئ": إنشاء الملف الذي يصر الـ npm على عدم وجوده
+      - name: Create package.json if missing
+        run: |
+          echo '{"name":"causal-one","version":"0.1.0","devDependencies":{"@tauri-apps/cli":"^2.0.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -19,7 +24,6 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      # تثبيت الأدوات الضرورية للبناء على Linux
       - name: Install Ubuntu Dependencies
         run: |
           sudo apt-get update
@@ -28,7 +32,6 @@ jobs:
       - name: Install NPM dependencies
         run: npm install
 
-      # البناء باستخدام الإعدادات التي أضفناها للمشروع
       - name: Build project
         run: npx tauri build --config src-tauri/tauri.conf.json
         env:
