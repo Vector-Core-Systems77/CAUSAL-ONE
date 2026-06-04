@@ -16,7 +16,6 @@ jobs:
         with:
           node-version: 20
 
-      # 1. إعداد بيئة العمل بإصدارات موحدة 2.1.0
       - name: Setup Project Environment
         run: |
           echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build","tauri":"tauri"},"devDependencies":{"@tauri-apps/cli":"2.1.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1","@tauri-apps/api":"2.1.0"}}' > package.json
@@ -38,13 +37,15 @@ jobs:
       - name: Build Frontend
         run: npx vite build
 
-      # 2. إنشاء Cargo.toml بإصدار 2.1.0 ليتوافق مع الـ API
+      # إنشاء ملف build.rs الضروري لتشغيل Tauri Context
       - name: Fix Cargo Structure
         run: |
+          echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
           echo '[package]
           name = "causal-one"
           version = "0.1.0"
           edition = "2021"
+          build = "build.rs"
 
           [lib]
           path = "src/lib.rs"
@@ -61,7 +62,6 @@ jobs:
           [build-dependencies]
           tauri-build = "2.1.0"' > src-tauri/Cargo.toml
 
-      # 3. البناء النهائي
       - name: Build Project
         run: npx tauri build --config src-tauri/tauri.conf.json
         env:
