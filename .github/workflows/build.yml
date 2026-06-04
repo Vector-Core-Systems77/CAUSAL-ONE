@@ -11,15 +11,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # خطوة "الطوارئ": إنشاء الملف الذي يصر الـ npm على عدم وجوده
-      - name: Create package.json if missing
-        run: |
-          echo '{"name":"causal-one","version":"0.1.0","devDependencies":{"@tauri-apps/cli":"^2.0.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      # 1. إنشاء ملفات البيئة الأساسية تلقائياً
+      - name: Setup Project Environment
+        run: |
+          echo '{"name":"causal-one","version":"0.1.0","scripts":{"build":"vite build","tauri":"tauri"},"devDependencies":{"@tauri-apps/cli":"^2.0.0","typescript":"^5.5.3","vite":"^5.4.2","@vitejs/plugin-react":"^4.3.1"},"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1"}}' > package.json
+          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -29,10 +30,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
 
-      - name: Install NPM dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Build project
+      # 2. بناء الواجهة أولاً لإنشاء مجلد dist
+      - name: Build Frontend
+        run: npx vite build
+
+      # 3. بناء تطبيق Tauri
+      - name: Build Project
         run: npx tauri build --config src-tauri/tauri.conf.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
