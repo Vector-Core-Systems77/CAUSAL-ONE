@@ -19,7 +19,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - uses: actions/setup-java@v4
         with:
@@ -55,7 +54,7 @@ jobs:
             "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }
           EOF
           
-          # الخطوة السحرية التي ستحل مشكلة الـ lock file
+          # إنشاء ملف الـ lock فوراً لتجنب أي أخطاء مستقبلية
           npm install --package-lock-only
 
           cat <<EOF > tsconfig.json
