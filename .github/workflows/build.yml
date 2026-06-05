@@ -8,11 +8,13 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
       NDK_VERSION: 25.2.9519653
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set Android SDK Root
+        run: echo "ANDROID_SDK_ROOT=$RUNNER_TEMP/android-sdk" >> $GITHUB_ENV
 
       - uses: actions/setup-node@v4
         with:
@@ -50,55 +52,55 @@ jobs:
           rm -rf src-tauri
           mkdir -p src-tauri/src src-tauri/icons
           echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > src-tauri/icons/icon.png
-          
+
           cat <<EOF > index.html
           <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Causal One</title></head>
           <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
           EOF
-          
+
           cat <<EOF > package.json
           { "name": "causal-one", "version": "0.1.0", "scripts": { "build": "vite build" },
             "devDependencies": { "typescript": "^5.5.3", "vite": "^5.4.2", "@vitejs/plugin-react": "^4.3.1" },
             "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }
           EOF
-          
+
           cat <<EOF > tsconfig.json
-          { "compilerOptions": { "target": "ES2020", "lib": ["DOM", "DOM.Iterable", "ESNext"], 
+          { "compilerOptions": { "target": "ES2020", "lib": ["DOM", "DOM.Iterable", "ESNext"],
             "module": "ESNext", "skipLibCheck": true, "moduleResolution": "bundler",
             "allowImportingTsExtensions": true, "resolveJsonModule": true, "isolatedModules": true,
             "noEmit": true, "jsx": "react-jsx", "strict": true }, "include": ["src"] }
           EOF
-          
+
           cat <<EOF > vite.config.ts
           import { defineConfig } from "vite"; import react from "@vitejs/plugin-react";
           export default defineConfig({ plugins: [react()], build: { outDir: "dist" } });
           EOF
-          
+
           mkdir -p src
           echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
           echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App";
           ReactDOM.createRoot(document.getElementById("root")!).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
           echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
-          
+
           cat <<EOF > src-tauri/tauri.conf.json
           { "productName": "causalone", "version": "0.1.0", "identifier": "com.causal.one",
             "app": { "windows": [{ "title": "causalone", "width": 800, "height": 600 }] },
             "build": { "frontendDist": "../dist" },
             "bundle": { "active": true, "targets": ["apk"], "icon": ["icons/icon.png"] } }
           EOF
-          
+
           cat <<EOF > src-tauri/src/lib.rs
           #[cfg_attr(mobile, tauri::mobile_entry_point)]
           pub fn run() {
             tauri::Builder::default()
-              .invoke_handler(tauri::generate_handler![greet])
-              .run(tauri::generate_context!())
-              .expect("error while running tauri application");
+             .invoke_handler(tauri::generate_handler![greet])
+             .run(tauri::generate_context!())
+             .expect("error while running tauri application");
           }
           #[tauri::command]
           fn greet(name: &str) -> String { format!("Hello, {}!", name) }
           EOF
-          
+
           cat <<EOF > src-tauri/Cargo.toml
           [package]
           name = "causal-one"
@@ -113,7 +115,7 @@ jobs:
           path = "src/lib.rs"
           crate-type = ["staticlib", "cdylib", "rlib"]
           EOF
-          
+
           echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
 
       - name: Fix NDK Path for Tauri
@@ -124,7 +126,7 @@ jobs:
 
       - name: Build Frontend + Android
         run: |
-          npm install  # ci راح يفشل بدون lockfile
+          npm install
           npm run build
           cargo tauri android init --ci
           cargo tauri android build --apk --universal
