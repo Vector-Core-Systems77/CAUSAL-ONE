@@ -6,89 +6,99 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    runs-on: ubuntu-22.04
+    env:
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+      NDK_VERSION: 25.2.9519653
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK and NDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-34 ndk;25.2.9519653'
+          cmdline-tools-version: 11076708
+          packages: 'platforms;android-34 platform-tools ndk;${{ env.NDK_VERSION }}'
           accept-licenses: true
 
-      - name: Setup Rust
-        run: |
-          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-          cargo install tauri-cli@2.0.0 --locked
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
-      - name: Set environment variables
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
-          echo "NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - run: cargo install tauri-cli --version "^2.0" --locked
 
       - name: Create Project Files
         run: |
           rm -rf src-tauri
-          mkdir -p src src-tauri/src src-tauri/icons
-          # توليد ملف PNG حقيقي 1x1 شفاف
+          mkdir -p src-tauri/src src-tauri/icons
           echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > src-tauri/icons/icon.png
           
           cat <<EOF > index.html
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="UTF-8"><title>Causal One</title></head>
-          <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
-          </html>
+          <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Causal One</title></head>
+          <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
           EOF
-          cat <<EOF > tsconfig.json
-          {
-            "compilerOptions": {
-              "target": "ES2020",
-              "lib": ["DOM", "DOM.Iterable", "ESNext"],
-              "module": "ESNext",
-              "skipLibCheck": true,
-              "moduleResolution": "bundler",
-              "allowImportingTsExtensions": true,
-              "resolveJsonModule": true,
-              "isolatedModules": true,
-              "noEmit": true,
-              "jsx": "react-jsx",
-              "strict": true
-            },
-            "include": ["src"]
-          }
-          EOF
+          
           cat <<EOF > package.json
-          {
-          "name": "causal-one", "version": "0.1.0",
-          "scripts": { "build": "vite build" },
-          "devDependencies": { "typescript": "^5.5.3", "vite": "^5.4.2", "@vitejs/plugin-react": "^4.3.1" },
-          "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" }
-          }
+          { "name": "causal-one", "version": "0.1.0", "scripts": { "build": "vite build" },
+            "devDependencies": { "typescript": "^5.5.3", "vite": "^5.4.2", "@vitejs/plugin-react": "^4.3.1" },
+            "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }
           EOF
+          
+          cat <<EOF > tsconfig.json
+          { "compilerOptions": { "target": "ES2020", "lib": ["DOM", "DOM.Iterable", "ESNext"], 
+            "module": "ESNext", "skipLibCheck": true, "moduleResolution": "bundler",
+            "allowImportingTsExtensions": true, "resolveJsonModule": true, "isolatedModules": true,
+            "noEmit": true, "jsx": "react-jsx", "strict": true }, "include": ["src"] }
+          EOF
+          
+          cat <<EOF > vite.config.ts
+          import { defineConfig } from "vite"; import react from "@vitejs/plugin-react";
+          export default defineConfig({ plugins: [react()], build: { outDir: "dist" } });
+          EOF
+          
+          mkdir -p src
+          echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
+          echo 'import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App";
+          ReactDOM.createRoot(document.getElementById("root")!).render(<React.StrictMode><App /></React.StrictMode>);' > src/main.tsx
+          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
+          
           cat <<EOF > src-tauri/tauri.conf.json
-          {
-          "productName": "causalone",
-          "version": "0.1.0",
-          "identifier": "com.causal.one",
-          "app": { "windows": [{ "title": "causalone", "width": 800, "height": 600 }] },
-          "build": { "frontendDist": "../dist" },
-          "bundle": { "active": true, "targets": ["app"], "icon": ["icons/icon.png"] }
-          }
+          { "productName": "causalone", "version": "0.1.0", "identifier": "com.causal.one",
+            "app": { "windows": [{ "title": "causalone", "width": 800, "height": 600 }] },
+            "build": { "frontendDist": "../dist" },
+            "bundle": { "active": true, "targets": ["apk"], "icon": ["icons/icon.png"] } }
           EOF
+          
+          cat <<EOF > src-tauri/src/lib.rs
+          #[cfg_attr(mobile, tauri::mobile_entry_point)]
+          pub fn run() {
+            tauri::Builder::default()
+              .invoke_handler(tauri::generate_handler![greet])
+              .run(tauri::generate_context!())
+              .expect("error while running tauri application");
+          }
+          #[tauri::command]
+          fn greet(name: &str) -> String { format!("Hello, {}!", name) }
+          EOF
+          
           cat <<EOF > src-tauri/Cargo.toml
           [package]
           name = "causal-one"
@@ -98,41 +108,30 @@ jobs:
           tauri-build = { version = "2.0.0" }
           [dependencies]
           tauri = { version = "2.0.0" }
-          serde = { version = "1.0", features = ["derive"] }
-          serde_json = "1.0"
           [lib]
           name = "causal_one_lib"
           path = "src/lib.rs"
+          crate-type = ["staticlib", "cdylib", "rlib"]
           EOF
-          cat <<EOF > src/main.tsx
-          import "./App.css"; import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App";
-          const rootElement = document.getElementById("root");
-          if (rootElement) {
-            ReactDOM.createRoot(rootElement).render(<React.StrictMode><App /></React.StrictMode>);
-          }
-          EOF
-          echo 'import React from "react"; function App() { return (<div><h1>CAUSAL-ONE IS RUNNING</h1></div>); } export default App;' > src/App.tsx
-          echo 'body { margin: 0; font-family: sans-serif; }' > src/App.css
-          echo 'import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; export default defineConfig({plugins: [react()], build: {outDir: "dist"}});' > vite.config.ts
-          echo '#[tauri::command]
-          fn greet(name: &str) -> String { format!("Hello, {}!", name) }
-          pub fn run() {
-            tauri::Builder::default()
-              .invoke_handler(tauri::generate_handler![greet])
-              .run(tauri::generate_context!())
-              .expect("error while running tauri application");
-          }' > src-tauri/src/lib.rs
+          
           echo 'fn main() { tauri_build::build() }' > src-tauri/build.rs
 
-      - name: Build and Package
+      - name: Fix NDK Path for Tauri
         run: |
-          npm install
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/${{ env.NDK_VERSION }}" >> $GITHUB_ENV
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/${{ env.NDK_VERSION }}" > src-tauri/local.properties
+
+      - name: Build Frontend + Android
+        run: |
+          npm install  # ci راح يفشل بدون lockfile
           npm run build
-          cargo tauri android init
-          cargo tauri android build --apk
+          cargo tauri android init --ci
+          cargo tauri android build --apk --universal
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Causal-One-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+          if-no-files-found: error
