@@ -76,10 +76,12 @@ jobs:
           EOF
           cat <<EOF > src-tauri/tauri.conf.json
           {
-          "productName": "causalone", "version": "0.1.0",
+          "productName": "causalone",
+          "version": "0.1.0",
+          "identifier": "com.causal.one",
           "app": { "windows": [{ "title": "causalone", "width": 800, "height": 600 }] },
           "build": { "frontendDist": "../dist" },
-          "bundle": { "identifier": "com.causal.one", "active": true, "targets": ["app"] }
+          "bundle": { "active": true, "targets": ["app"] }
           }
           EOF
           cat <<EOF > src-tauri/Cargo.toml
