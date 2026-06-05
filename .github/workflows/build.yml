@@ -41,7 +41,11 @@ jobs:
 
       - name: Create Project Files
         run: |
-          mkdir -p src src-tauri/src
+          rm -rf src-tauri
+          mkdir -p src src-tauri/src src-tauri/icons
+          # توليد ملف PNG حقيقي 1x1 شفاف
+          echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > src-tauri/icons/icon.png
+          
           cat <<EOF > index.html
           <!DOCTYPE html>
           <html>
@@ -82,7 +86,7 @@ jobs:
           "identifier": "com.causal.one",
           "app": { "windows": [{ "title": "causalone", "width": 800, "height": 600 }] },
           "build": { "frontendDist": "../dist" },
-          "bundle": { "active": true, "targets": ["app"] }
+          "bundle": { "active": true, "targets": ["app"], "icon": ["icons/icon.png"] }
           }
           EOF
           cat <<EOF > src-tauri/Cargo.toml
@@ -124,7 +128,6 @@ jobs:
         run: |
           npm install
           npm run build
-          rm -rf src-tauri/gen || true
           cargo tauri android init
           cargo tauri android build --apk
 
