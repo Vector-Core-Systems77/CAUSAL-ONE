@@ -37,6 +37,7 @@ jobs:
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
+          echo "NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
 
       - name: Create Project Files
         run: |
@@ -125,10 +126,10 @@ jobs:
           npm run build
           rm -rf src-tauri/gen || true
           cargo tauri android init
-          cargo tauri android build --apk --universal
+          cargo tauri android build --apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Causal-One-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/universal/debug/*.apk
+          path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
