@@ -36,15 +36,6 @@ jobs:
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            src-tauri/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
       - run: cargo install tauri-cli --version "^2.0" --locked
 
       - name: Create Project Files
@@ -63,6 +54,9 @@ jobs:
             "devDependencies": { "typescript": "^5.5.3", "vite": "^5.4.2", "@vitejs/plugin-react": "^4.3.1" },
             "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }
           EOF
+          
+          # الخطوة السحرية التي ستحل مشكلة الـ lock file
+          npm install --package-lock-only
 
           cat <<EOF > tsconfig.json
           { "compilerOptions": { "target": "ES2020", "lib": ["DOM", "DOM.Iterable", "ESNext"],
