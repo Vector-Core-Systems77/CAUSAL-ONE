@@ -77,13 +77,13 @@ jobs:
         run: |
           cd src-tauri
           cargo tauri android init --ci || echo "Android project already exists"
-          cd..
+          cd ..
 
       - name: Build Tauri Android Debug APK
         run: cargo tauri android build --apk --ci
 
       - name: Upload APK
-        uses: actions/build-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: CAUSAL-ONE-APK-Debug-${{ github.run_number }}
           path: src-tauri/gen/android/app/build/outputs/apk/debug/app-debug.apk
