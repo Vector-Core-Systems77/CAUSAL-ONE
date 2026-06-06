@@ -31,7 +31,7 @@ jobs:
           targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
       - name: Install deps
-        run: npm ci
+        run: npm install
 
       - name: Build Frontend
         run: npm run build
