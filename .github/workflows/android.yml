@@ -38,6 +38,7 @@ jobs:
 
       - name: Init Android
         run: npm run tauri android init --ci
+        continue-on-error: true
 
       - name: Build Android APK
         run: cargo tauri android build --apk --universal
@@ -46,4 +47,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: causal-one-android-apk
-          path: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
