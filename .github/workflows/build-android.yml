@@ -49,17 +49,17 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-androideabi, x86_64-linux-android
 
-      - name: Cache Cargo v2
+      - name: Cache Cargo
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             src-tauri/target
-          key: ${{ runner.os }}-cargo-v2-${{ hashFiles('src-tauri/Cargo.toml') }}
-          restore-keys: ${{ runner.os }}-cargo-v2-
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
@@ -84,15 +84,13 @@ jobs:
       - name: Build Tauri Android Debug APK
         run: cargo tauri android build --apk --ci
 
-      - name: List APK files
+      - name: List all APK files
         run: find src-tauri/gen/android -name "*.apk" -type f
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CAUSAL-ONE-APK-Debug-${{ github.run_number }}
-          path: |
-            src-tauri/gen/android/app/build/outputs/apk/arm64-v8a/debug/app-debug.apk
-            src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-debug.apk
+          path: src-tauri/gen/android/**/build/outputs/apk/**/debug/*.apk
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
