@@ -6,21 +6,25 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:1420",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "CAUSAL-ONE",
         "width": 390,
         "height": 844,
-        "resizable": false
+        "resizable": false,
+        "fullscreen": false
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
   },
   "bundle": {
     "active": true,
-    "targets": ["android"]
+    "createUpdaterArtifacts": false
   }
 }
