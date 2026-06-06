@@ -42,7 +42,7 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
           echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
-          mkdir -p src-tauri
+          mkdir -p src-tauri/gen/android
           echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/25.2.9519653" > src-tauri/local.properties
           echo "sdk.dir=$ANDROID_SDK_ROOT" >> src-tauri/local.properties
 
@@ -59,7 +59,6 @@ jobs:
             ~/.cargo/git
             src-tauri/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
-          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
@@ -81,14 +80,14 @@ jobs:
           cargo tauri android init --ci || echo "Android project already exists"
           cd ..
 
-      - name: Setup Debug Keystore
+      - name: Create Debug Keystore BEFORE Build
         run: |
-          keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
-          echo -e "storePassword=android\nkeyPassword=android\nkeyAlias=androiddebugkey\nstoreFile=debug.keystore" > src-tauri/gen/android/keystore.properties
-          cp debug.keystore src-tauri/gen/android/
+          cd src-tauri/gen/android
+          keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US" -noprompt
+          echo -e "storePassword=android\nkeyPassword=android\nkeyAlias=androiddebugkey\nstoreFile=debug.keystore" > keystore.properties
 
-      - name: Build Signed Debug APK
-        run: cargo tauri android build --apk --ci
+      - name: Build Signed Release APK
+        run: cargo tauri android build --apk --ci --release
 
       - name: Find APK location
         run: find src-tauri/gen/android -type f -name "*.apk"
@@ -97,6 +96,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CAUSAL-ONE-APK-Signed-${{ github.run_number }}
-          path: src-tauri/gen/android/**/*.apk
+          path: src-tauri/gen/android/**/build/outputs/apk/release/*.apk
           retention-days: 30
           if-no-files-found: error
