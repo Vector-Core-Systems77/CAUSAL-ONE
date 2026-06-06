@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     
     steps:
       - name: Checkout code
@@ -28,7 +28,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK + NDK
+      - name: Setup Android SDK + NDK + Build Tools
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 11076708
@@ -49,7 +49,7 @@ jobs:
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
-      - name: Cache Cargo registry
+      - name: Cache Cargo
         uses: actions/cache@v4
         with:
           path: |
@@ -66,7 +66,10 @@ jobs:
         run: npm run build
 
       - name: Initialize Tauri Android Project
-        run: cargo tauri android init --ci || echo "Already initialized"
+        run: |
+          cd src-tauri
+          cargo tauri android init --ci || echo "Android project already exists"
+          cd ..
 
       - name: Build Tauri Android Debug APK
         run: cargo tauri android build --apk --ci
@@ -74,6 +77,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CAUSAL-ONE-APK-Debug
+          name: CAUSAL-ONE-APK-Debug-${{ github.run_number }}
           path: src-tauri/gen/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+          if-no-files-found: error
