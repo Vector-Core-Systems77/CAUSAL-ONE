@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci   # تأكد من وجود package-lock.json، وإلا استخدم npm install
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -47,8 +47,18 @@ jobs:
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi
 
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
       - name: Install Tauri CLI
-        run: cargo install tauri-cli
+        run: cargo install tauri-cli --locked
 
       - name: Build Frontend
         run: npm run build
