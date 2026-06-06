@@ -2,10 +2,11 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "CAUSAL-ONE",
   "version": "0.1.0",
-  "identifier": "com.causal.one",
+  "identifier": "com.causal.one.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },
   "app": {
@@ -13,18 +14,16 @@
       {
         "label": "main",
         "title": "CAUSAL-ONE",
-        "width": 390,
-        "height": 844,
-        "resizable": false,
-        "fullscreen": false
+        "width": 1200,
+        "height": 800
       }
-    ],
-    "security": {
-      "csp": null
-    }
+    ]
   },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": false
+    "targets": "all",
+    "android": {
+      "minSdkVersion": 24
+    }
   }
 }
