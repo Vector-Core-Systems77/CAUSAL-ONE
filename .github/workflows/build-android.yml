@@ -1,18 +1,20 @@
-name: Build Android APK
+name: Build CAUSAL-ONE Android APK
+
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install pnpm
         run: npm install -g pnpm
@@ -20,14 +22,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK + NDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+          packages: 'platforms;android-34 platform-tools ndk;25.2.9519653'
+          accept-licenses: true
+
+      - name: Set Android Env
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
+          mkdir -p src-tauri
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/25.2.9519653" > src-tauri/local.properties
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -37,8 +50,11 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli
 
-      - name: Build Tauri Android
-        run: cargo tauri android build --release
+      - name: Build Frontend
+        run: pnpm build
+
+      - name: Build Tauri Android Release APK
+        run: cargo tauri android build --release --apk --universal
         env:
           TAURI_PRIVATE_KEY: ""
           TAURI_KEY_PASSWORD: ""
@@ -46,5 +62,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CAUSAL-ONE-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/release/*.apk
+          name: CAUSAL-ONE-APK-Release
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk
