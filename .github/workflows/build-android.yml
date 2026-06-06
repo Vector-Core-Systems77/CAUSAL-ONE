@@ -84,13 +84,17 @@ jobs:
       - name: Build Tauri Android Debug APK
         run: cargo tauri android build --apk --ci
 
-      - name: List all APK files
-        run: find src-tauri/gen/android -name "*.apk" -type f
+      - name: Find APK location
+        run: |
+          echo "=== البحث عن كل ملفات APK ==="
+          find src-tauri/gen/android -type f -name "*.apk" 2>/dev/null || echo "ما لقيت APK"
+          echo "=== محتويات مجلد outputs ==="
+          ls -R src-tauri/gen/android/app/build/outputs/ 2>/dev/null || echo "مجلد outputs غير موجود"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CAUSAL-ONE-APK-Debug-${{ github.run_number }}
-          path: src-tauri/gen/android/**/build/outputs/apk/**/debug/*.apk
+          path: src-tauri/gen/android/**/*.apk
           retention-days: 30
           if-no-files-found: error
