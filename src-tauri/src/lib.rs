@@ -1,16 +1,21 @@
-mod engine;
-use engine::inference::{CausalModel, InterventionResult};
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use serde::{Deserialize, Serialize};
 use tauri::command;
 
-#[command]
-fn run_causal_query(model: CausalModel, treatment: String, outcome: String) -> InterventionResult {
-    model.intervene(&treatment, &outcome)
+#[derive(Debug, Serialize, Deserialize)]
+struct GreetArgs {
+    name: String,
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+#[command]
+fn run_causal_query() -> String {
+    "Hello from CAUSAL-ONE".into()
+}
+
+fn main() {
     tauri::Builder::default()
-      .invoke_handler(tauri::generate_handler![run_causal_query])
-      .run(tauri::generate_context!())
-      .expect("error while running tauri application");
+       .invoke_handler(tauri::generate_handler![run_causal_query])
+       .run(tauri::generate_context!())
+       .expect("error while running tauri application");
 }
