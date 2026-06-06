@@ -66,10 +66,10 @@ jobs:
         run: cargo tauri android init --ci
 
       - name: Build Tauri Android Debug APK
-        run: cargo tauri android build --apk --universal
+        run: cargo tauri android build --apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CAUSAL-ONE-APK-Debug
-          path: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+          path: src-tauri/gen/android/app/build/outputs/apk/debug/app-debug.apk
