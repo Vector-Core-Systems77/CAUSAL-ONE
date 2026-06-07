@@ -89,20 +89,24 @@ jobs:
       - name: Build Unsigned Release APK
         run: cargo tauri android build --apk --ci
 
-      - name: Sign APK arm64-v8a
-        run: |
-          APK=$(find src-tauri/gen/android -path "*/arm64-v8a/*.apk" -name "*release-unsigned.apk" | head -n 1)
-          echo "Signing: $APK"
-          mkdir -p src-tauri/gen/android/app/build/outputs/apk/release
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks src-tauri/gen/android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out src-tauri/gen/android/app/build/outputs/apk/release/app-arm64-release-signed.apk "$APK"
+      - name: List APK files
+        run: find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" -ls
 
-      - name: Find APK location
-        run: find src-tauri/gen/android -type f -name "*.apk"
+      - name: Sign APK
+        run: |
+          APK=$(find src-tauri/gen/android/app/build/outputs/apk -name "*release-unsigned.apk" | head -n 1)
+          echo "Signing: $APK"
+          if [ -z "$APK" ]; then
+            echo "Error: No APK found"
+            exit 1
+          fi
+          mkdir -p src-tauri/gen/android/app/build/outputs/apk/release
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks src-tauri/gen/android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out src-tauri/gen/android/app/build/outputs/apk/release/app-release-signed.apk "$APK"
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: CAUSAL-ONE-ARM64-APK-${{ github.run_number }}
-          path: src-tauri/gen/android/app/build/outputs/apk/release/app-arm64-release-signed.apk
+          name: CAUSAL-ONE-APK-${{ github.run_number }}
+          path: src-tauri/gen/android/app/build/outputs/apk/release/app-release-signed.apk
           retention-days: 30
           if-no-files-found: error
