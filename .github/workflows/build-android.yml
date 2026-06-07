@@ -92,6 +92,7 @@ jobs:
         run: |
           APK=$(find src-tauri/gen/android -name "app-universal-release-unsigned.apk" | head -n 1)
           echo "Signing: $APK"
+          mkdir -p src-tauri/gen/android/app/build/outputs/apk/release
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks src-tauri/gen/android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out src-tauri/gen/android/app/build/outputs/apk/release/app-universal-release-signed.apk "$APK"
 
       - name: Find APK location
