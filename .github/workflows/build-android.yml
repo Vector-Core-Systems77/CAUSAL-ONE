@@ -42,7 +42,7 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
           echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
-          mkdir -p src-tauri/gen/android
+          mkdir -p src-tauri
           echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/25.2.9519653" > src-tauri/local.properties
           echo "sdk.dir=$ANDROID_SDK_ROOT" >> src-tauri/local.properties
 
@@ -80,22 +80,28 @@ jobs:
           cargo tauri android init --ci || echo "Android project already exists"
           cd ..
 
-      - name: Create Debug Keystore BEFORE Build
+      - name: Create Debug Keystore
         run: |
           cd src-tauri/gen/android
           keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US" -noprompt
-          echo -e "storePassword=android\nkeyPassword=android\nkeyAlias=androiddebugkey\nstoreFile=debug.keystore" > keystore.properties
 
-      - name: Build Signed Release APK
-        run: cargo tauri android build --apk --ci --release
+      - name: Build Unsigned Release APK
+        run: cargo tauri android build --apk --ci
+
+      - name: Sign APK
+        run: |
+          APK=$(find src-tauri/gen/android -name "app-universal-release-unsigned.apk" | head -n 1)
+          echo "Signing: $APK"
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks src-tauri/gen/android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out src-tauri/gen/android/app/build/outputs/apk/release/app-universal-release-signed.apk "$APK"
 
       - name: Find APK location
         run: find src-tauri/gen/android -type f -name "*.apk"
 
       - name: Upload Signed APK
+        uses: actions/setup-node@v5
         uses: actions/upload-artifact@v4
         with:
           name: CAUSAL-ONE-APK-Signed-${{ github.run_number }}
-          path: src-tauri/gen/android/**/build/outputs/apk/release/*.apk
+          path: src-tauri/gen/android/**/app-universal-release-signed.apk
           retention-days: 30
           if-no-files-found: error
