@@ -87,14 +87,14 @@ jobs:
           keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US" -noprompt
 
       - name: Build Unsigned Release APK
-        run: cargo tauri android build --apk --universal --ci
+        run: cargo tauri android build --apk --ci
 
-      - name: Sign APK
+      - name: Sign APK arm64-v8a
         run: |
-          APK=$(find src-tauri/gen/android -name "app-universal-release-unsigned.apk" | head -n 1)
+          APK=$(find src-tauri/gen/android -path "*/arm64-v8a/*.apk" -name "*release-unsigned.apk" | head -n 1)
           echo "Signing: $APK"
           mkdir -p src-tauri/gen/android/app/build/outputs/apk/release
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks src-tauri/gen/android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out src-tauri/gen/android/app/build/outputs/apk/release/app-universal-release-signed.apk "$APK"
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks src-tauri/gen/android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out src-tauri/gen/android/app/build/outputs/apk/release/app-arm64-release-signed.apk "$APK"
 
       - name: Find APK location
         run: find src-tauri/gen/android -type f -name "*.apk"
@@ -102,7 +102,7 @@ jobs:
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: CAUSAL-ONE-APK-Signed-${{ github.run_number }}
-          path: src-tauri/gen/android/**/app-universal-release-signed.apk
+          name: CAUSAL-ONE-ARM64-APK-${{ github.run_number }}
+          path: src-tauri/gen/android/app/build/outputs/apk/release/app-arm64-release-signed.apk
           retention-days: 30
           if-no-files-found: error
