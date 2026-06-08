@@ -5,7 +5,6 @@ description = "A Tauri App"
 authors = ["you"]
 license = ""
 repository = ""
-default-run = "causal_one"
 
 [lib]
 crate-type = ["staticlib", "cdylib", "rlib"]
