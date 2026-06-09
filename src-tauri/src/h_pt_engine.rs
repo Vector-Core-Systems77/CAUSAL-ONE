@@ -1,9 +1,8 @@
-use std::f64::consts::PI;
 use num_complex::Complex64;
 
 type C = Complex64;
 
-pub struct HPT_Operator {
+pub struct HptOperator {
     lambda: f64,
     x0: f64,
     xmax: f64,
@@ -12,7 +11,7 @@ pub struct HPT_Operator {
     pub seed_state: Vec<f64>,
 }
 
-impl HPT_Operator {
+impl HptOperator {
     pub fn new() -> Self {
         Self {
             lambda: 0.25,
