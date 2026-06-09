@@ -1,6 +1,7 @@
-use num_complex::Complex;
+use std::f64::consts::PI;
+use num_complex::Complex64;
 
-type C = Complex<f64>;
+type C = Complex64;
 
 pub struct HPT_Operator {
     lambda: f64,
