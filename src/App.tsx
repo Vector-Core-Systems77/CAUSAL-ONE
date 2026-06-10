@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-// 1. نعرف شكل البيانات اللي ترجع من Rust
 interface CausalResult {
   cause: string;
   effect: string;
@@ -13,8 +12,8 @@ interface CausalResult {
 function App() {
   const [cause, setCause] = useState<string>('');
   const [effect, setEffect] = useState<string>('');
-  const [lambda] = useState<number>(1.0);
-  const [result, setResult] = useState<CausalResult | null>(null); // هنا التعديل
+  const [lambda, setLambda] = useState<number>(1.0);
+  const [result, setResult] = useState<CausalResult | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -24,7 +23,6 @@ function App() {
     setLoading(true);
 
     try {
-      // 2. نقول لـ invoke ايش نوع البيانات اللي راجعة
       const res = await invoke<CausalResult>('calculate_causal_effect', {
         cause: cause.trim(),
         effect: effect.trim(),
@@ -32,7 +30,6 @@ function App() {
       });
       setResult(res);
     } catch (err: unknown) {
-      // 3. نعالج الخطأ صح
       console.error(err);
       setError(typeof err === 'string'? err : 'حدث خطأ غير متوقع');
     } finally {
@@ -61,6 +58,19 @@ function App() {
           value={effect}
           onChange={(e) => setEffect(e.target.value)}
           placeholder="مثال: المزاج"
+          style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box' }}
+        />
+      </div>
+
+      <div style={{ marginTop: '15px' }}>
+        <label>معامل السببية λ:</label><br/>
+        <input
+          type="number"
+          step="0.1"
+          min="0.01"
+          max="10"
+          value={lambda}
+          onChange={(e) => setLambda(parseFloat(e.target.value) || 1.0)}
           style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box' }}
         />
       </div>
@@ -94,6 +104,7 @@ function App() {
           <h3 style={{ marginTop: 0 }}>النتيجة:</h3>
           <p><b>السبب:</b> {result.cause}</p>
           <p><b>الهدف:</b> {result.effect}</p>
+          <p><b>λ المستخدم:</b> {result.lambda}</p>
           <p><b>التأثير:</b> {result.impact.toFixed(3)}</p>
           <p><b>الرسالة:</b> {result.message}</p>
         </div>
