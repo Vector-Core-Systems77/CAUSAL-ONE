@@ -92,3 +92,15 @@ impl HptOperator {
         self.seed_state[9] = avg;
     }
 }
+
+// دالة الربط مع Tauri - ترجع f64 عشان App.tsx
+pub fn calculate_causal_effect(_cause: String, _effect: String, lambda: f64) -> f64 {
+    let mut hpt = HptOperator::new();
+    hpt.lambda = lambda;
+
+    // نستخدم lambda كتخمين أولي للطاقة e
+    match hpt.generate_zero(lambda) {
+        Some(eigenvalue) => eigenvalue, // هذا هو impact
+        None => lambda * 2.5 // fallback لو ما لقى صفر
+    }
+}
