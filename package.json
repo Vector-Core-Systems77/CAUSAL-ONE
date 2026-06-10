@@ -1,7 +1,8 @@
 {
   "name": "causal-one",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,16 +10,10 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "2.4.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "@tauri-apps/api": "2.2.3"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.4.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "typescript": "~5.3.3",
-    "vite": "^5.4.10"
+    "@tauri-apps/cli": "2.2.3",
+    "vite": "^5.0.0"
   }
 }
