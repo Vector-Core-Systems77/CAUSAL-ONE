@@ -1,11 +1,28 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod h_pt_engine;
-use h_pt_engine::calculate_causal_effect as hpt_calc;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct CausalResult {
+    cause: String,
+    effect: String,
+    lambda: f64,
+    impact: f64,
+    message: String,
+}
 
 #[tauri::command]
-fn calculate_causal_effect(cause: String, effect: String, lambda: f64) -> String {
-    hpt_calc(cause, effect, lambda)
+fn calculate_causal_effect(cause: String, effect: String, lambda: f64) -> CausalResult {
+    let impact = h_pt_engine::calculate_causal_effect(cause.clone(), effect.clone(), lambda);
+    
+    CausalResult {
+        cause,
+        effect,
+        lambda,
+        impact,
+        message: format!("تم حساب التأثير السببي بنجاح")
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
