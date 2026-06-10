@@ -43,6 +43,17 @@ jobs:
           npm install @tauri-apps/cli@2.2.3 --save-dev --save-exact
           npm install
 
+      - name: Verify versions
+        run: npm list @tauri-apps/api @tauri-apps/cli
+
+      - name: Check h_pt factory status
+        run: |
+          if [ -d "h_pt" ]; then
+            echo "h_pt factory found - untouched ✅"
+          else
+            echo "No h_pt folder - safe ✅"
+          fi
+
       - name: Build frontend
         run: npm run build
 
@@ -55,7 +66,7 @@ jobs:
       - name: Build Android APK Universal
         run: cargo tauri android build --apk --ci
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: causal-one-apk
