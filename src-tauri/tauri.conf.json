@@ -1,32 +1,19 @@
 {
-  "$schema": "https://schema.tauri.app/config/v2",
-  "productName": "CAUSAL-ONE",
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Causal One",
   "version": "0.1.0",
-  "identifier": "com.causalone.app",
+  "identifier": "com.causalone.mobile",
   "build": {
     "beforeBuildCommand": "npm run build",
-    "beforeDevCommand": "npm run dev",
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:1420"
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "title": "CAUSAL-ONE",
-        "width": 400,
-        "height": 600,
-        "resizable": true,
-        "fullscreen": false
+        "label": "main",
+        "width": 800,
+        "height": 600
       }
-    ],
-    "security": {
-      "csp": null
-    }
-  },
-  "bundle": {
-    "active": true,
-    "icon": ["icons/icon.png"],
-    "category": "DeveloperTool"
-  },
-  "plugins": {}
+    ]
+  }
 }
