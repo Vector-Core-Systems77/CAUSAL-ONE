@@ -1,21 +1,17 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod h_pt_engine;
-mod commands;
+use h_pt_engine::calculate_causal_effect as hpt_calc;
 
-use h_pt_engine::HptOperator;
-use std::sync::Mutex;
-use tauri::Manager;
-
-pub struct HPTState(pub Mutex<HptOperator>);
+#[tauri::command]
+fn calculate_causal_effect(cause: String, effect: String, lambda: f64) -> String {
+    hpt_calc(cause, effect, lambda)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-       .manage(HPTState(Mutex::new(HptOperator::new())))
-       .invoke_handler(tauri::generate_handler![
-            commands::generate_next_zero,
-            commands::get_spectrum,
-            commands::get_status_cmd
-        ])
+       .invoke_handler(tauri::generate_handler![calculate_causal_effect])
        .run(tauri::generate_context!())
        .expect("error while running tauri application");
 }
