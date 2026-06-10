@@ -1,0 +1,80 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java 17 Temurin
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Rust + Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Setup Android SDK & NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Clean cache + Force Tauri 2.2.3
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install @tauri-apps/api@2.2.3 --save-exact
+          npm install @tauri-apps/cli@2.2.3 --save-dev --save-exact
+          npm install
+
+      - name: Verify Tauri versions match
+        run: |
+          echo "=== NPM Packages ==="
+          npm list @tauri-apps/api @tauri-apps/cli
+          echo "=== Rust Crate ==="
+          grep 'tauri =' src-tauri/Cargo.toml
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Tauri CLI 2.2.3
+        run: cargo install tauri-cli --version 2.2.3 --locked
+
+      - name: Verify h_pt factory untouched
+        run: |
+          if [ -d "h_pt" ]; then
+            echo "h_pt factory detected - safe and untouched ✅"
+            ls -la h_pt/
+          else
+            echo "No h_pt folder - safe ✅"
+          fi
+
+      - name: Initialize Android
+        run: cargo tauri android init --ci
+
+      - name: Build Android APK Universal
+        run: cargo tauri android build --apk --ci
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: causal-one-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+          if-no-files-found: error
+          retention-days: 30
